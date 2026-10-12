@@ -1,7 +1,7 @@
-"""Synthetic RFQ simulator for comparing inventory-aware market-making policies.
+"""Synthetic RFQ simulator for comparing market-making policies.
 
-All market mechanics are stylized assumptions. Results are for research and debugging,
-not evidence of live-market profitability.
+Market and customer-flow mechanics are stylized assumptions for research, not evidence
+of live-market profitability.
 """
 import argparse
 import json
@@ -35,8 +35,12 @@ def make_dealer(strategy, config=None):
 
 def run_session(seed=7, n_steps=1200, strategy="quantedge",
                 flow_mode="balanced", config=None):
-    """Run one synthetic session with common random numbers across strategies."""
-    rng = random.Random(seed)
+    """Run one deterministic synthetic session."""
+    # Independent streams prevent strategy-dependent code paths from changing
+    # the market tape or RFQ stream consumed by later events.
+    price_rng = random.Random(seed)
+    flow_rng = random.Random(seed + 1_000_003)
+    quote_rng = random.Random(seed + 2_000_033)
     dealer = None if strategy == "unmanaged_fixed" else make_dealer(strategy, config)
     cash = position = fills = hedges = 0
     notional = fees = 0.0
@@ -45,33 +49,32 @@ def run_session(seed=7, n_steps=1200, strategy="quantedge",
     max_abs_position = 0
     price = previous = 100.0
     recent_abs_returns = []
-    flow_direction = 0
+    recent_returns = []
 
     for t in range(n_steps):
-        # Three alternating volatility regimes.
         sigma = 0.0015 if (t // 180) % 3 else 0.0035
-        price *= math.exp(rng.gauss(0.00002, sigma))
-        abs_ret_bps = abs((price / previous - 1) * 10000)
+        log_return = price_rng.gauss(0.00002, sigma)
+        price *= math.exp(log_return)
+        abs_ret_bps = abs(log_return * 10000)
         recent_abs_returns.append(abs_ret_bps)
+        recent_returns.append(log_return)
         vol_bps = statistics.mean(recent_abs_returns[-20:])
+        momentum = sum(recent_returns[-5:])
         previous = price
 
-        # Customer-flow regimes allow explicit stress testing. In informed mode,
-        # customers disproportionately trade in the direction of recent momentum.
-        if t % 90 == 0:
-            flow_direction = rng.choice([-1, 1])
         if flow_mode == "balanced":
             buy_probability = 0.5
         elif flow_mode == "one_sided":
             buy_probability = 0.8 if (t // 120) % 2 == 0 else 0.2
         elif flow_mode == "informed":
-            recent_move = price / max(1e-12, price / math.exp(rng.gauss(0.0, sigma))) - 1
-            buy_probability = 0.65 if recent_move >= 0 else 0.35
+            # Stylized directional flow correlated with the latest short-term move.
+            buy_probability = 0.65 if momentum >= 0 else 0.35
         else:
             raise ValueError(f"Unknown flow mode: {flow_mode}")
-        side = "BUY" if rng.random() < buy_probability else "SELL"
-        qty = rng.choice([1, 1, 1, 2, 3])
-        customer_limit_bps = rng.uniform(2, 38)
+
+        side = "BUY" if flow_rng.random() < buy_probability else "SELL"
+        qty = flow_rng.choice([1, 1, 1, 2, 3])
+        customer_limit_bps = flow_rng.uniform(2, 38)
 
         if strategy == "unmanaged_fixed":
             edge = 8.0
@@ -81,7 +84,7 @@ def run_session(seed=7, n_steps=1200, strategy="quantedge",
                 {"side": side, "quantity": qty}, price, vol_bps, 0.01, position
             )
 
-        opponent_edge = rng.uniform(1, 18)
+        opponent_edge = quote_rng.uniform(1, 18)
         opponent_quote = (price * (1 + opponent_edge / 10000) if side == "BUY"
                           else price * (1 - opponent_edge / 10000))
         eligible = quote is not None and abs(quote / price - 1) * 10000 <= customer_limit_bps
