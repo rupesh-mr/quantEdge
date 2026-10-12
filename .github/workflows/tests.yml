@@ -29,7 +29,16 @@ jobs:
           for flow in balanced one_sided informed; do
             python simulator.py --sessions 50 --steps 1200 --seed 100 --flow "$flow" > "benchmark_output/$flow.json"
           done
-      - name: Upload benchmark results
+      - name: Optimize on training and validation seeds; evaluate holdout once
+        run: |
+          python optimize.py \
+            --steps 1200 \
+            --train-start 100 --train-sessions 20 \
+            --validation-start 500 --validation-sessions 20 \
+            --holdout-start 1000 --holdout-sessions 50 \
+            --top-k 5 --risk-aversion 0.5 \
+            > benchmark_output/optimization.json
+      - name: Upload benchmark and optimization results
         uses: actions/upload-artifact@v4
         with:
           name: research-v2-benchmark-results
