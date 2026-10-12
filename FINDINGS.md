@@ -68,6 +68,42 @@ The selected configuration produces much more PnL than the conservative current 
 
 Seed-paired holdout deltas are now computed using the same seeds for each policy. Against fixed control, the selected configuration's paired PnL difference was +1.08 in balanced flow (approx. 95% CI [-11.04, 13.20]), -8.07 in one-sided flow ([-16.90, 0.76]), and -6.27 in informed flow ([-16.36, 3.81]). All three intervals include zero, so the holdout does not show a clear PnL advantage over fixed control. Paired drawdown differences were -20.99 ([-25.83, -16.14]), -19.06 ([-22.23, -15.89]), and -15.52 ([-18.77, -12.26]), respectively. These are approximate, descriptive intervals without multiple-comparison adjustment; pairing does not address model misspecification or the fact that the strategy was selected from a grid.
 
+## Legacy versus stochastic execution sensitivity
+
+The stochastic execution benchmark completed on the same 50 seeds (100–149), 1,200 steps, and three flow modes as the legacy benchmark. The stochastic model uses probabilistic quote allocation and synthetic partial fills. Paired PnL deltas below are stochastic minus legacy for the same seed; approximate 95% intervals use the per-seed PnL values rounded in the benchmark JSON.
+
+| Flow | Strategy | PnL delta | Approx. paired 95% CI | Legacy / stochastic mean drawdown | Stochastic partial fills/session |
+|---|---|---:|---:|---:|---:|
+| Balanced | QuantEdge | +5.98 | [0.47, 11.50] | 8.27 / 10.95 | 36.58 |
+| Balanced | Fixed control | -9.21 | [-19.26, 0.83] | 37.73 / 37.19 | 62.78 |
+| Balanced | Adaptive loose | -10.37 | [-15.73, -5.01] | 18.16 / 20.42 | 78.48 |
+| One-sided | QuantEdge | +2.34 | [-3.20, 7.87] | 13.20 / 21.60 | 27.64 |
+| One-sided | Fixed control | -7.06 | [-16.46, 2.34] | 48.35 / 47.28 | 64.28 |
+| One-sided | Adaptive loose | -6.33 | [-12.43, -0.22] | 37.14 / 40.84 | 59.42 |
+| Informed | QuantEdge | +6.30 | [2.02, 10.57] | 8.98 / 11.61 | 36.56 |
+| Informed | Fixed control | -0.55 | [-11.92, 10.82] | 36.01 / 37.25 | 63.46 |
+| Informed | Adaptive loose | -7.53 | [-13.34, -1.71] | 20.60 / 21.93 | 76.20 |
+
+### Markout diagnostics
+
+Markout is the signed mid-price move after a fill, in basis points, where positive means the subsequent mid move favored the dealer's inventory change. It is **not** net trade profitability: it excludes the quoted spread, hedge fees, and other execution costs.
+
+| Flow | Strategy | 1-step markout (bps) | 5-step markout (bps) |
+|---|---|---:|---:|
+| Balanced | QuantEdge | +0.0683 | +0.5356 |
+| Balanced | Fixed control | -0.0237 | +0.1137 |
+| Balanced | Adaptive loose | +0.0504 | +0.2800 |
+| One-sided | QuantEdge | -0.3197 | +0.0435 |
+| One-sided | Fixed control | +0.0596 | +0.8440 |
+| One-sided | Adaptive loose | -0.1245 | +0.5052 |
+| Informed | QuantEdge | -0.2029 | +0.6518 |
+| Informed | Fixed control | -0.0467 | +0.4130 |
+| Informed | Adaptive loose | -0.1553 | +0.3637 |
+
+The main result is **model sensitivity, not a new winner**. Under this stochastic fill assumption, QuantEdge's mean PnL rises versus legacy in all three flow modes, with paired intervals excluding zero in balanced and informed flow, but its mean drawdown also rises. The adaptive-loose policy loses PnL versus legacy in all three modes, with paired intervals excluding zero; its drawdown also rises modestly. Fixed-control PnL changes are inconclusive under these intervals. Stochastic partial fills are frequent, so the execution assumption materially affects policy rankings.
+
+These results remain synthetic. The allocation curve, competitor quote process, and fill-size randomization are not calibrated to venue data. The markouts are diagnostic only and should not be interpreted as evidence of live-market profitability.
+
 ## Methodology and caveats
 
 The price, RFQ-flow, and competitor-quote random streams are independent, so strategy branches do not alter later random draws. Customer flow is not calibrated from real order flow; prices are exogenous; market impact, queue priority, realistic partial fills, latency, and empirically calibrated post-fill markouts are absent. The confidence intervals describe variation across simulation seeds only, not uncertainty about the model itself.
