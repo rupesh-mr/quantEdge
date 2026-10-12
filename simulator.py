@@ -1,4 +1,4 @@
-"""Synthetic RFQ simulator; intentionally not the official competition simulator."""
+"""Synthetic RFQ simulator for testing market-making strategies."""
 import argparse
 import json
 import math
@@ -126,7 +126,7 @@ if __name__ == "__main__":
         "experiment": {
             "sessions": args.sessions, "steps_per_session": args.steps,
             "seeds": [seeds[0], seeds[-1]],
-            "note": "Synthetic simulator only; not official competition or live-market evidence."
+            "note": "Synthetic simulator only; not evidence of live-market performance."
         },
         "unmanaged_fixed": summarize("unmanaged_fixed", seeds, args.steps),
         "fixed_control": summarize("fixed_control", seeds, args.steps),
