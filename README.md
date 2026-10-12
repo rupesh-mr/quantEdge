@@ -1,44 +1,42 @@
-# QuantEdge: inventory-aware market-making experiment
+# QuantEdge: inventory-aware market-making research
 
-A standalone Python project for studying RFQ quoting, inventory risk, and hedging through a reproducible synthetic simulator. The results describe this simulator only and should not be interpreted as evidence of live-market profitability.
+A small, dependency-free Python research project for comparing RFQ quoting policies under stylized synthetic market and customer-flow assumptions. This is a simulator, not a claim of live-market profitability.
 
 ## Run
 
-Requires Python 3; no third-party dependencies.
-
 ```bash
 python -m unittest discover -s tests -v
-python simulator.py --sessions 50 --steps 1200 --seed 100
+python simulator.py --sessions 50 --steps 1200 --seed 100 --flow balanced
+python simulator.py --sessions 50 --steps 1200 --seed 100 --flow one_sided
+python simulator.py --sessions 50 --steps 1200 --seed 100 --flow informed
 ```
 
-## Strategy
+## Current model
 
-- Volatility-adjusted quote spreads.
-- Inventory-aware reservation-price shifts.
-- Hard position limits and tick-aligned quotes.
-- Threshold hedging with simulated exchange fees.
-- Synthetic benchmark against an unmanaged fixed-spread baseline and a managed fixed-spread control.
+- Volatility-sensitive quote edge and inventory-skewed reservation price.
+- Tick-aligned quoting, hard position limits, and threshold hedging with fees.
+- Reproducible random seeds, matched-seed strategy comparisons, and PnL uncertainty summaries.
+- Flow scenarios: balanced, one-sided stress, and momentum-associated customer flow.
+- Risk outputs include maximum absolute position, peak-to-trough drawdown, and maximum loss from session start.
 
-## Benchmark snapshot
+## Interpretation of the first benchmark
 
-Across 50 synthetic sessions (seeds 100–149, 1,200 RFQ opportunities each):
+In the original 50-session balanced-flow snapshot, QuantEdge had mean PnL 45.36 versus 75.89 for the managed fixed-spread control, but lower mean absolute ending inventory (0.96 versus 5.02) and lower mean maximum drawdown (8.39 versus 36.53). The result is a risk/activity trade-off, not a strategy win. The original benchmark also had zero QuantEdge hedge events.
 
-| Strategy | Mean PnL | Positive sessions | Mean fills | Mean absolute ending position | Mean max drawdown |
-|---|---:|---:|---:|---:|---:|
-| Unmanaged fixed spread | 85.87 | 64% | 590.9 | 35.76 | 270.18 |
-| Managed fixed-spread control | 75.89 | 94% | 552.3 | 5.02 | 36.53 |
-| QuantEdge | 45.36 | 100% | 265.6 | 0.96 | 8.39 |
+## Caveats and research next steps
 
-QuantEdge is more conservative in this sample, but has lower mean PnL and fewer fills than the managed fixed spread control. This is a risk/activity trade-off, not a claim of strategy superiority. Hedging did not trigger in QuantEdge's benchmark sessions; the hedge logic is covered by unit tests but needs additional scenario testing.
+The model remains deliberately stylized. Customer-flow modes are stress scenarios rather than calibrated empirical order flow. The price process is exogenous, competitor quotes are randomized, and there is no market impact, queue position, partial fill model, or calibration to historical data. The reported 95% interval is a normal approximation for the mean across independent seeded sessions; it does not represent model uncertainty.
 
-## Limitations
-
-The simulator uses synthetic prices and randomized customer flow. It does not model market impact or informed/adverse-selection flow. See [FINDINGS.md](FINDINGS.md) for details.
+Suggested next experiments:
+1. Compare policies across all three flow modes using the same seed set.
+2. Tune quote and inventory parameters on a designated training seed range only.
+3. Freeze the selected policy and report untouched holdout seeds.
+4. Add calibrated fill/markout models before making claims about trading performance.
 
 ## Files
 
-- `dealer_bot.py`: quoting and hedging rules.
-- `simulator.py`: reproducible synthetic benchmark.
-- `tests/test_dealer_bot.py`: unit tests.
-- `benchmark_results.json`: saved benchmark output.
-- `FINDINGS.md`: interpretation, caveats, and next experiments.
+- `dealer_bot.py`: strategy config, quoting, and hedging rules.
+- `simulator.py`: synthetic market and customer-flow experiments.
+- `tests/test_dealer_bot.py`: strategy and simulator unit tests.
+- `benchmark_results.json`: legacy benchmark snapshot.
+- `FINDINGS.md`: interpretation of the original snapshot and limitations.
