@@ -31,6 +31,8 @@ jobs:
             python simulator.py --sessions 50 --steps 1200 --seed 100 --flow "$flow" > "benchmark_output/$flow.json"
             python simulator.py --sessions 50 --steps 1200 --seed 100 --flow "$flow" --execution-model stochastic > "benchmark_output/stochastic_$flow.json"
           done
+      - name: Compare legacy and stochastic execution models
+        run: python compare_execution.py --directory benchmark_output > benchmark_output/execution_comparison.json
       - name: Optimize on training and validation seeds; evaluate holdout once
         run: |
           python optimize.py \
