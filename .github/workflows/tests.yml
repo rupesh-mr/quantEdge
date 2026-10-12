@@ -23,6 +23,7 @@ jobs:
           python simulator.py --sessions 3 --steps 120 --seed 100 --flow balanced
           python simulator.py --sessions 3 --steps 120 --seed 100 --flow one_sided
           python simulator.py --sessions 3 --steps 120 --seed 100 --flow informed
+          python simulator.py --sessions 3 --steps 120 --seed 100 --flow balanced --execution-model stochastic
       - name: Run full seeded benchmark matrix
         run: |
           mkdir -p benchmark_output
