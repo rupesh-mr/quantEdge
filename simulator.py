@@ -174,15 +174,18 @@ def run_session(seed=7, n_steps=1200, strategy="quantedge",
     }
 
 
-def summarize(strategy, seeds, n_steps, flow_mode="balanced", config=None):
+def summarize(strategy, seeds, n_steps, flow_mode="balanced", config=None,
+             execution_model="legacy"):
     runs = [run_session(seed=s, n_steps=n_steps, strategy=strategy,
-                        flow_mode=flow_mode, config=config) for s in seeds]
+                        flow_mode=flow_mode, config=config,
+                        execution_model=execution_model) for s in seeds]
     pnls = [r["final_pnl"] for r in runs]
     mean_pnl = statistics.mean(pnls)
     std_pnl = statistics.stdev(pnls) if len(pnls) > 1 else 0.0
     sem = std_pnl / math.sqrt(len(pnls)) if runs else 0.0
     return {
         "strategy": strategy, "flow_mode": flow_mode, "sessions": len(runs),
+        "execution_model": execution_model,
         "mean_pnl": round(mean_pnl, 4), "median_pnl": round(statistics.median(pnls), 4),
         "pnl_std": round(std_pnl, 4), "mean_pnl_ci95_approx": [
             round(mean_pnl - 1.96 * sem, 4), round(mean_pnl + 1.96 * sem, 4)
@@ -221,7 +224,8 @@ if __name__ == "__main__":
             "note": "Stylized synthetic simulator only; not evidence of live-market performance.",
         },
         "strategies": {
-            name: summarize(name, seeds, args.steps, args.flow) for name in strategies
+            name: summarize(name, seeds, args.steps, args.flow,
+                            execution_model=args.execution_model) for name in strategies
         },
         "execution_model": args.execution_model,
     }
