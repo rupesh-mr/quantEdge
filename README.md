@@ -4,7 +4,7 @@ A Python simulator for testing market-making rules under synthetic RFQ flow. It 
 
 ## Run
 
-Requires Python 3.12 or newer. The project uses only the standard library.
+Requires Python 3.12 or newer.
 
 ```bash
 python -m unittest discover -s tests -v
