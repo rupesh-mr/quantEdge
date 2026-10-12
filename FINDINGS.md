@@ -27,7 +27,7 @@ Does adding volatility-aware spreads and inventory-aware pricing change the bala
 2. **QuantEdge is more conservative than the fixed control.** Its inventory skew and volatility adjustment led to fewer fills, lower mean PnL, smaller ending positions, and lower drawdown in this sample.
 3. **There is a tuning problem, not a victory claim.** The current settings appear to trade too little relative to the fixed control under these simulator assumptions. The next step should be a controlled parameter study, not claiming QuantEdge is superior.
 4. **Hedging was not exercised by QuantEdge in this run.** Inventory stayed below the threshold. Unit tests confirm the hedge function's basic direction and quantity behaviour, but scenario tests with persistent one-sided order flow are still needed.
-5. **Market impact and adverse selection are missing.** Because the synthetic price process does not react to our trades and customer direction is random, this experiment cannot answer the most important later-round market-impact question or evaluate informed customer flow.
+5. **Market impact and adverse selection are missing.** Because the synthetic price process does not react to our trades and customer direction is random, this experiment cannot evaluate how trading affects prices or how the strategy responds to informed customer flow.
 
 ## Important caveats
 
@@ -35,7 +35,7 @@ Does adding volatility-aware spreads and inventory-aware pricing change the bala
 - The same seeds improve comparability but do not make the simulator realistic.
 - Parameters were not selected using a separate training/holdout process.
 - The unmanaged strategy intentionally lacks the same risk controls, so it is only a cautionary reference.
-- Results cannot be extrapolated to the official competition, where rules, fees, customer behaviour, settlement, and market impact may differ.
+- Outcomes may differ substantially in real markets, where fees, customer behaviour, settlement, and market impact vary.
 
 ## Reproduction
 
