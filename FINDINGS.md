@@ -91,5 +91,3 @@ python simulator.py --sessions 50 --steps 1200 --seed 100 --flow informed
 python simulator.py --sessions 50 --steps 1200 --seed 100 --flow balanced --execution-model stochastic
 python optimize.py --steps 1200 --train-start 100 --train-sessions 20 --validation-start 500 --validation-sessions 20 --holdout-start 1000 --holdout-sessions 50
 ```
-
-Full benchmark and optimization logs are available in [GitHub Actions](https://github.com/rupesh-mr/quantEdge/actions).
