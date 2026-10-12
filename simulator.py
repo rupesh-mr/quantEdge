@@ -34,16 +34,22 @@ def make_dealer(strategy, config=None):
 
 
 def run_session(seed=7, n_steps=1200, strategy="quantedge",
-                flow_mode="balanced", config=None):
+                flow_mode="balanced", config=None, execution_model="legacy"):
     """Run one deterministic synthetic session."""
     # Independent streams prevent strategy-dependent code paths from changing
     # the market tape or RFQ stream consumed by later events.
     price_rng = random.Random(seed)
     flow_rng = random.Random(seed + 1_000_003)
     quote_rng = random.Random(seed + 2_000_033)
+    execution_rng = random.Random(seed + 3_000_037)
+    if execution_model not in ("legacy", "stochastic"):
+        raise ValueError(f"Unknown execution model: {execution_model}")
     dealer = None if strategy == "unmanaged_fixed" else make_dealer(strategy, config)
-    cash = position = fills = hedges = 0
+    cash = position = fills = hedges = partial_fills = filled_quantity = 0
     notional = fees = 0.0
+    pending_markouts = []
+    markout_1s = []
+    markout_5s = []
     equity_peak = 0.0
     max_drawdown = max_loss_from_start = 0.0
     max_abs_position = 0
@@ -55,6 +61,14 @@ def run_session(seed=7, n_steps=1200, strategy="quantedge",
         sigma = 0.0015 if (t // 180) % 3 else 0.0035
         log_return = price_rng.gauss(0.00002, sigma)
         price *= math.exp(log_return)
+        # Mark-to-mid outcomes after fills. Positive markout means the dealer's
+        # inventory change benefited from the subsequent mid-price move.
+        for event in pending_markouts:
+            if event["target_1"] == t:
+                markout_1s.append(event["signed_side"] * (price / event["fill_price"] - 1) * 10000)
+            if event["target_5"] == t:
+                markout_5s.append(event["signed_side"] * (price / event["fill_price"] - 1) * 10000)
+        pending_markouts = [e for e in pending_markouts if e["target_5"] > t]
         abs_ret_bps = abs(log_return * 10000)
         recent_abs_returns.append(abs_ret_bps)
         recent_returns.append(log_return)
@@ -89,16 +103,39 @@ def run_session(seed=7, n_steps=1200, strategy="quantedge",
                           else price * (1 - opponent_edge / 10000))
         eligible = quote is not None and abs(quote / price - 1) * 10000 <= customer_limit_bps
         wins = eligible and (quote <= opponent_quote if side == "BUY" else quote >= opponent_quote)
+        fill_qty = 0
+        if execution_model == "legacy":
+            if wins:
+                fill_qty = qty
+        elif eligible:
+            # Smooth stochastic allocation based on relative quote competitiveness.
+            # This is an explicit synthetic assumption, not a calibrated venue model.
+            dealer_edge = abs(quote / price - 1) * 10000
+            competitor_edge = abs(opponent_quote / price - 1) * 10000
+            advantage = competitor_edge - dealer_edge
+            fill_probability = 1 / (1 + math.exp(-max(-30, min(30, advantage / 4))))
+            if execution_rng.random() < fill_probability:
+                fill_qty = qty if execution_rng.random() < 0.5 else execution_rng.randint(1, qty)
 
-        if wins:
+        if fill_qty > 0:
             fills += 1
-            notional += qty * quote
+            filled_quantity += fill_qty
+            if fill_qty < qty:
+                partial_fills += 1
+            notional += fill_qty * quote
             if side == "BUY":
-                cash += qty * quote
-                position -= qty
+                cash += fill_qty * quote
+                position -= fill_qty
+                signed_side = -1
             else:
-                cash -= qty * quote
-                position += qty
+                cash -= fill_qty * quote
+                position += fill_qty
+                signed_side = 1
+            if execution_model == "stochastic":
+                pending_markouts.append({
+                    "target_1": t + 1, "target_5": t + 5,
+                    "fill_price": price, "signed_side": signed_side,
+                })
 
         if dealer is not None:
             action = dealer.hedge_one("ASSET", position)
@@ -123,7 +160,13 @@ def run_session(seed=7, n_steps=1200, strategy="quantedge",
     final_pnl = cash + position * price - fees
     return {
         "seed": seed, "strategy": strategy, "flow_mode": flow_mode,
-        "steps": n_steps, "fills": fills, "fill_rate": fills / n_steps,
+        "steps": n_steps, "execution_model": execution_model,
+        "fills": fills, "fill_rate": fills / n_steps,
+        "filled_quantity": filled_quantity, "partial_fills": partial_fills,
+        "mean_markout_1_step_bps": statistics.mean(markout_1s) if markout_1s else None,
+        "mean_markout_5_step_bps": statistics.mean(markout_5s) if markout_5s else None,
+        "markout_1_step_observations": len(markout_1s),
+        "markout_5_step_observations": len(markout_5s),
         "customer_notional": notional, "ending_position": position,
         "max_abs_position": max_abs_position, "hedges": hedges, "fees": fees,
         "final_pnl": final_pnl, "max_drawdown_from_peak": max_drawdown,
@@ -164,6 +207,8 @@ if __name__ == "__main__":
     parser.add_argument("--seed", type=int, default=100)
     parser.add_argument("--flow", choices=("balanced", "one_sided", "informed"),
                         default="balanced")
+    parser.add_argument("--execution-model", choices=("legacy", "stochastic"),
+                        default="legacy")
     args = parser.parse_args()
     if args.sessions < 1 or args.steps < 1:
         parser.error("--sessions and --steps must be positive")
@@ -178,5 +223,6 @@ if __name__ == "__main__":
         "strategies": {
             name: summarize(name, seeds, args.steps, args.flow) for name in strategies
         },
+        "execution_model": args.execution_model,
     }
     print(json.dumps(results, indent=2))
