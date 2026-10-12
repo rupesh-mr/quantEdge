@@ -1,4 +1,4 @@
-name: Python tests
+name: Python tests and benchmarks
 
 on:
   pull_request:
@@ -7,7 +7,7 @@ on:
     branches: [main, research-v2]
 
 jobs:
-  test:
+  test-and-benchmark:
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
@@ -23,3 +23,15 @@ jobs:
           python simulator.py --sessions 3 --steps 120 --seed 100 --flow balanced
           python simulator.py --sessions 3 --steps 120 --seed 100 --flow one_sided
           python simulator.py --sessions 3 --steps 120 --seed 100 --flow informed
+      - name: Run full seeded benchmark matrix
+        run: |
+          mkdir -p benchmark_output
+          for flow in balanced one_sided informed; do
+            python simulator.py --sessions 50 --steps 1200 --seed 100 --flow "$flow" > "benchmark_output/$flow.json"
+          done
+      - name: Upload benchmark results
+        uses: actions/upload-artifact@v4
+        with:
+          name: research-v2-benchmark-results
+          path: benchmark_output/
+          if-no-files-found: error
