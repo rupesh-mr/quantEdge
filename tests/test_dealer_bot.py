@@ -1,4 +1,5 @@
 import unittest
+from optimize import candidate_configs
 from dealer_bot import QuantEdgeDealer, StrategyConfig
 from simulator import run_session
 
@@ -74,6 +75,19 @@ class HedgeTests(unittest.TestCase):
 
     def test_short_position_is_bought_back(self):
         self.assertEqual(self.bot.hedge_one("X", -20), ("BUY", 15))
+
+
+class OptimizerTests(unittest.TestCase):
+    def test_candidate_grid_is_nonempty_and_unique(self):
+        candidates = list(candidate_configs())
+        self.assertEqual(len(candidates), 54)
+        self.assertEqual(len({tuple(sorted(vars(c).items())) for c in candidates}), 54)
+
+    def test_candidates_have_risk_limits(self):
+        for config in candidate_configs():
+            self.assertGreater(config.inventory_hard_limit, 0)
+            self.assertGreaterEqual(config.base_edge_bps, 0)
+            self.assertGreater(config.hedge_threshold, 0)
 
 
 class SimulatorTests(unittest.TestCase):
