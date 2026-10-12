@@ -6,7 +6,7 @@
       100,
       149
     ],
-    "note": "Synthetic simulator only; not official competition or live-market evidence."
+    "note": "Synthetic simulator only; not evidence of live-market performance."
   },
   "unmanaged_fixed": {
     "strategy": "unmanaged_fixed",
