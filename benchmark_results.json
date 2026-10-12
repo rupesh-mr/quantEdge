@@ -1,0 +1,54 @@
+{
+  "experiment": {
+    "sessions": 50,
+    "steps_per_session": 1200,
+    "seeds": [
+      100,
+      149
+    ],
+    "note": "Synthetic simulator only; not official competition or live-market evidence."
+  },
+  "unmanaged_fixed": {
+    "strategy": "unmanaged_fixed",
+    "sessions": 50,
+    "mean_pnl": 85.8663,
+    "median_pnl": 56.7809,
+    "positive_sessions_pct": 64,
+    "mean_fills": 590.9,
+    "mean_fill_rate": 0.4924,
+    "mean_abs_ending_position": 35.76,
+    "mean_max_abs_position": 55.16,
+    "mean_hedges": 0,
+    "mean_fees": 0,
+    "mean_max_drawdown": 270.1753
+  },
+  "fixed_control": {
+    "strategy": "fixed_control",
+    "sessions": 50,
+    "mean_pnl": 75.89,
+    "median_pnl": 81.64,
+    "positive_sessions_pct": 94,
+    "mean_fills": 552.3,
+    "mean_fill_rate": 0.4603,
+    "mean_abs_ending_position": 5.02,
+    "mean_max_abs_position": 11,
+    "mean_hedges": 12.58,
+    "mean_fees": 1.1706,
+    "mean_max_drawdown": 36.53
+  },
+  "quantedge": {
+    "strategy": "quantedge",
+    "sessions": 50,
+    "mean_pnl": 45.36,
+    "median_pnl": 45.37,
+    "positive_sessions_pct": 100,
+    "mean_fills": 265.6,
+    "mean_fill_rate": 0.2213,
+    "mean_abs_ending_position": 0.96,
+    "mean_max_abs_position": 5.56,
+    "mean_hedges": 0,
+    "mean_fees": 0,
+    "mean_max_drawdown": 8.39
+  },
+  "note": "Aggregate benchmark snapshot. Re-run simulator.py to regenerate full per-seed outputs."
+}
