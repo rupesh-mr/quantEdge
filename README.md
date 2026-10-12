@@ -1,6 +1,6 @@
 # QuantEdge: inventory-aware market-making experiment
 
-A standalone Python experiment for studying RFQ quoting, inventory risk, and hedging. This project is **not integrated with the official competition SDK** and is not evidence of live-market or competition profitability.
+A standalone Python project for studying RFQ quoting, inventory risk, and hedging through a reproducible synthetic simulator. The results describe this simulator only and should not be interpreted as evidence of live-market profitability.
 
 ## Run
 
@@ -33,7 +33,7 @@ QuantEdge is more conservative in this sample, but has lower mean PnL and fewer 
 
 ## Limitations
 
-The simulator uses synthetic prices and randomized customer flow. It does not model market impact or informed/adverse-selection flow, and it is not the official competition environment. See [FINDINGS.md](FINDINGS.md) for details.
+The simulator uses synthetic prices and randomized customer flow. It does not model market impact or informed/adverse-selection flow. See [FINDINGS.md](FINDINGS.md) for details.
 
 ## Files
 
