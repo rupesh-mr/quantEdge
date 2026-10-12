@@ -111,6 +111,20 @@ class SimulatorTests(unittest.TestCase):
         self.assertGreaterEqual(result["max_drawdown_from_peak"], 0)
         self.assertGreaterEqual(result["max_loss_from_start"], 0)
 
+    def test_stochastic_execution_reports_partial_fill_and_markout_metrics(self):
+        result = run_session(seed=22, n_steps=500, execution_model="stochastic")
+        self.assertEqual(result["execution_model"], "stochastic")
+        self.assertGreater(result["fills"], 0)
+        self.assertGreater(result["markout_1_step_observations"], 0)
+        self.assertGreater(result["markout_5_step_observations"], 0)
+        self.assertGreaterEqual(result["partial_fills"], 0)
+        self.assertIsNotNone(result["mean_markout_1_step_bps"])
+
+    def test_stochastic_execution_is_reproducible(self):
+        a = run_session(seed=44, n_steps=150, execution_model="stochastic")
+        b = run_session(seed=44, n_steps=150, execution_model="stochastic")
+        self.assertEqual(a, b)
+
 
 if __name__ == "__main__":
     unittest.main()
