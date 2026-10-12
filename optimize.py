@@ -19,10 +19,10 @@ FLOW_MODES = ("balanced", "one_sided", "informed")
 def candidate_configs():
     """A deliberately small, interpretable grid; expand only after inspecting results."""
     grid = itertools.product(
-        (3.0, 5.0, 7.0),       # base edge bps
-        (0.05, 0.15, 0.25),    # volatility multiplier
-        (0.8, 1.5, 2.5),       # inventory skew bps per lot
-        (8, 12),               # hedge threshold
+        (3.0, 5.0, 7.0),
+        (0.05, 0.15, 0.25),
+        (0.8, 1.5, 2.5),
+        (8, 12),
     )
     for base, vol, skew, hedge in grid:
         yield StrategyConfig(
@@ -97,8 +97,44 @@ def summarize_holdout(strategy, config, seeds, steps):
                 statistics.mean(abs(r["ending_position"]) for r in runs), 4
             ),
             "mean_fills": round(statistics.mean(r["fills"] for r in runs), 4),
+            # Preserve paired observations so comparisons use the same random seeds.
+            "pnl_by_seed": {str(r["seed"]): round(r["final_pnl"], 8) for r in runs},
+            "drawdown_by_seed": {
+                str(r["seed"]): round(r["max_drawdown_from_peak"], 8) for r in runs
+            },
         }
     return result
+
+
+def paired_comparison(candidate, baseline):
+    """Paired seed-wise deltas; normal-approximation 95% CI, not a formal t-test."""
+    by_flow = {}
+    for flow in FLOW_MODES:
+        c = candidate[flow]["pnl_by_seed"]
+        b = baseline[flow]["pnl_by_seed"]
+        seeds = sorted(set(c) & set(b), key=int)
+        pnl_deltas = [c[s] - b[s] for s in seeds]
+        cdd = candidate[flow]["drawdown_by_seed"]
+        bdd = baseline[flow]["drawdown_by_seed"]
+        dd_deltas = [cdd[s] - bdd[s] for s in seeds]
+
+        def stats(values):
+            mean = statistics.mean(values)
+            sem = statistics.stdev(values) / (len(values) ** 0.5) if len(values) > 1 else 0.0
+            return {
+                "mean_delta": round(mean, 4),
+                "ci95_approx": [round(mean - 1.96 * sem, 4), round(mean + 1.96 * sem, 4)],
+            }
+
+        by_flow[flow] = {
+            "paired_sessions": len(seeds),
+            "pnl_candidate_minus_baseline": stats(pnl_deltas),
+            "drawdown_candidate_minus_baseline": stats(dd_deltas),
+            "pct_sessions_candidate_higher_pnl": round(
+                100 * sum(x > 0 for x in pnl_deltas) / len(pnl_deltas), 2
+            ),
+        }
+    return by_flow
 
 
 def main():
@@ -152,6 +188,14 @@ def main():
             "quantedge", None, seed_sets["holdout"], args.steps
         ),
     }
+    paired = {
+        "selected_adaptive_vs_fixed_control": paired_comparison(
+            holdout["selected_adaptive"], holdout["fixed_control"]
+        ),
+        "selected_adaptive_vs_current_quantedge": paired_comparison(
+            holdout["selected_adaptive"], holdout["current_quantedge"]
+        ),
+    }
     print(json.dumps({
         "method": {
             "objective": "mean PnL - risk_aversion * mean peak-to-trough drawdown",
@@ -161,12 +205,14 @@ def main():
             "train_top_k": len(finalists),
             "seeds": seed_sets,
             "holdout_used_for_selection": False,
+            "paired_comparison_note": "Seed-wise paired deltas use a normal-approximation 95% CI; this is descriptive, not a formal multiple-testing-adjusted test.",
             "caveat": "Stylized synthetic model; scores are not live-trading evidence.",
         },
         "training_top_5": train_ranked[:5],
         "validation_ranked_finalists": validation_ranked,
         "selected_config": asdict(selected),
         "holdout_results": holdout,
+        "paired_comparisons": paired,
     }, indent=2))
 
 
