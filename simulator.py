@@ -193,6 +193,18 @@ def summarize(strategy, seeds, n_steps, flow_mode="balanced", config=None,
         "positive_sessions_pct": round(100 * sum(x > 0 for x in pnls) / len(pnls), 2),
         "mean_fills": round(statistics.mean(r["fills"] for r in runs), 2),
         "mean_fill_rate": round(statistics.mean(r["fill_rate"] for r in runs), 4),
+        "mean_filled_quantity": round(statistics.mean(r["filled_quantity"] for r in runs), 2),
+        "mean_partial_fills": round(statistics.mean(r["partial_fills"] for r in runs), 2),
+        "mean_markout_1_step_bps": (
+            round(statistics.mean(r["mean_markout_1_step_bps"] for r in runs
+                                  if r["mean_markout_1_step_bps"] is not None), 4)
+            if any(r["mean_markout_1_step_bps"] is not None for r in runs) else None
+        ),
+        "mean_markout_5_step_bps": (
+            round(statistics.mean(r["mean_markout_5_step_bps"] for r in runs
+                                  if r["mean_markout_5_step_bps"] is not None), 4)
+            if any(r["mean_markout_5_step_bps"] is not None for r in runs) else None
+        ),
         "mean_abs_ending_position": round(statistics.mean(abs(r["ending_position"]) for r in runs), 2),
         "mean_max_abs_position": round(statistics.mean(r["max_abs_position"] for r in runs), 2),
         "mean_hedges": round(statistics.mean(r["hedges"] for r in runs), 2),
