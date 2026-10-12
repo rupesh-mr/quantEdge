@@ -66,7 +66,7 @@ Selected configuration:
 
 The selected configuration produces much more PnL than the conservative current QuantEdge policy, with higher drawdown and inventory exposure. Against the fixed control, it is close to even in balanced flow (+1.08 mean PnL), and lower in one-sided (-8.07) and informed flow (-6.27). Mean drawdown is lower than fixed control by 56.6%, 41.1%, and 45.1%, respectively. The individual approximate PnL confidence intervals overlap. These are descriptive simulation results, not evidence of live-market profitability.
 
-The next CI revision adds seed-paired holdout deltas and approximate confidence intervals. Pairing by seed can reduce noise from differences in simulated paths; it still does not account for model misspecification or repeated strategy selection.
+Seed-paired holdout deltas are now computed using the same seeds for each policy. Against fixed control, the selected configuration's paired PnL difference was +1.08 in balanced flow (approx. 95% CI [-11.04, 13.20]), -8.07 in one-sided flow ([-16.90, 0.76]), and -6.27 in informed flow ([-16.36, 3.81]). All three intervals include zero, so the holdout does not show a clear PnL advantage over fixed control. Paired drawdown differences were -20.99 ([-25.83, -16.14]), -19.06 ([-22.23, -15.89]), and -15.52 ([-18.77, -12.26]), respectively. These are approximate, descriptive intervals without multiple-comparison adjustment; pairing does not address model misspecification or the fact that the strategy was selected from a grid.
 
 ## Methodology and caveats
 
@@ -86,7 +86,7 @@ python optimize.py --steps 1200 --train-start 100 --train-sessions 20 --validati
 
 ## Next experiments
 
-1. Add seed-paired holdout comparisons and confidence intervals (now implemented in optimize.py).
-2. Add configurable latency, queue competition, partial fills, and post-fill markout diagnostics.
-3. Calibrate fill and markout assumptions against a defensibly sourced dataset before interpreting the simulator as market evidence.
+1. Compare the legacy deterministic fill model against the optional stochastic partial-fill model and inspect markout diagnostics.
+2. Calibrate fill and markout assumptions against a defensibly sourced dataset before interpreting the simulator as market evidence.
+3. Add latency and richer queue/competition assumptions only where the execution venue makes those mechanics appropriate.
 4. Only then evaluate a frozen policy on another untouched holdout.
