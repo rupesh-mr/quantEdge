@@ -1,5 +1,6 @@
 import unittest
 from dealer_bot import QuantEdgeDealer, StrategyConfig
+from simulator import run_session
 
 
 class QuoteTests(unittest.TestCase):
@@ -19,6 +20,7 @@ class QuoteTests(unittest.TestCase):
             ({"side": "BUY", "quantity": 1}, -1, 10, .01, 0),
             ({"side": "BUY", "quantity": 1}, 100, float("nan"), .01, 0),
             ({}, 100, 10, .01, 0),
+            ({"side": "BUY", "quantity": 1}, 100, 10, 0, 0),
         ]:
             self.assertIsNone(self.bot.quote_one(order, price, vol, tick, pos))
 
@@ -72,6 +74,28 @@ class HedgeTests(unittest.TestCase):
 
     def test_short_position_is_bought_back(self):
         self.assertEqual(self.bot.hedge_one("X", -20), ("BUY", 15))
+
+
+class SimulatorTests(unittest.TestCase):
+    def test_reproducible_with_same_seed(self):
+        a = run_session(seed=123, n_steps=100, strategy="quantedge")
+        b = run_session(seed=123, n_steps=100, strategy="quantedge")
+        self.assertEqual(a, b)
+
+    def test_unknown_strategy_fails_fast(self):
+        with self.assertRaises(ValueError):
+            run_session(seed=1, n_steps=5, strategy="not-a-strategy")
+
+    def test_stress_modes_are_supported(self):
+        for mode in ("balanced", "one_sided", "informed"):
+            result = run_session(seed=22, n_steps=100, strategy="quantedge", flow_mode=mode)
+            self.assertEqual(result["steps"], 100)
+            self.assertGreaterEqual(result["max_abs_position"], 0)
+
+    def test_drawdown_metrics_are_nonnegative(self):
+        result = run_session(seed=12, n_steps=100)
+        self.assertGreaterEqual(result["max_drawdown_from_peak"], 0)
+        self.assertGreaterEqual(result["max_loss_from_start"], 0)
 
 
 if __name__ == "__main__":
