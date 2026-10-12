@@ -15,23 +15,23 @@ python simulator.py --sessions 50 --steps 1200 --seed 100 --flow informed
 
 - Volatility-sensitive quote edge and inventory-skewed reservation price.
 - Tick-aligned quoting, hard position limits, and threshold hedging with fees.
-- Reproducible random seeds, matched-seed strategy comparisons, and PnL uncertainty summaries.
-- Flow scenarios: balanced, one-sided stress, and momentum-associated customer flow.
-- Risk outputs include maximum absolute position, peak-to-trough drawdown, and maximum loss from session start.
+- Independent seeded streams for price, RFQ flow, and competitor quotes.
+- Balanced, one-sided stress, and momentum-associated customer-flow scenarios.
+- Risk outputs include PnL dispersion, approximate confidence intervals, maximum absolute position, peak-to-trough drawdown, and maximum loss from session start.
 
-## Interpretation of the first benchmark
+## Research-v2 results
 
-In the original 50-session balanced-flow snapshot, QuantEdge had mean PnL 45.36 versus 75.89 for the managed fixed-spread control, but lower mean absolute ending inventory (0.96 versus 5.02) and lower mean maximum drawdown (8.39 versus 36.53). The result is a risk/activity trade-off, not a strategy win. The original benchmark also had zero QuantEdge hedge events.
+GitHub Actions successfully ran unit tests and the full benchmark matrix: 50 sessions × 1,200 RFQ opportunities for each of three flow modes. [Download benchmark JSON artifacts](https://github.com/rupesh-mr/quantEdge/actions/runs/38264423562).
 
-## Caveats and research next steps
+The adaptive configuration increased mean PnL substantially versus the very conservative QuantEdge configuration, while also increasing inventory exposure and drawdown. Against the managed fixed-spread control, it had lower mean PnL but lower average maximum drawdown in all three scenarios. The one-sided stress case remains challenging. Confidence intervals overlap, so the experiment does not establish a statistically significant PnL improvement.
 
-The model remains deliberately stylized. Customer-flow modes are stress scenarios rather than calibrated empirical order flow. The price process is exogenous, competitor quotes are randomized, and there is no market impact, queue position, partial fill model, or calibration to historical data. The reported 95% interval is a normal approximation for the mean across independent seeded sessions; it does not represent model uncertainty.
+See [FINDINGS.md](FINDINGS.md) for the full tables and interpretation.
 
-Suggested next experiments:
-1. Compare policies across all three flow modes using the same seed set.
-2. Tune quote and inventory parameters on a designated training seed range only.
-3. Freeze the selected policy and report untouched holdout seeds.
-4. Add calibrated fill/markout models before making claims about trading performance.
+## Caveats and next steps
+
+The customer-flow modes are stylized stress scenarios, not calibrated empirical order flow. Prices remain exogenous; market impact, true queue position, realistic partial fills, and empirically calibrated post-fill markouts are not modeled. The approximate confidence interval reflects variation across simulation seeds, not model uncertainty. These results are not evidence of live-market profitability.
+
+Next: tune parameters on training seeds, freeze one configuration, evaluate on untouched holdout seeds, and calibrate fill/markout assumptions from defensibly sourced data.
 
 ## Files
 
@@ -39,4 +39,4 @@ Suggested next experiments:
 - `simulator.py`: synthetic market and customer-flow experiments.
 - `tests/test_dealer_bot.py`: strategy and simulator unit tests.
 - `benchmark_results.json`: legacy benchmark snapshot.
-- `FINDINGS.md`: interpretation of the original snapshot and limitations.
+- `FINDINGS.md`: full research-v2 benchmark results and limitations.
