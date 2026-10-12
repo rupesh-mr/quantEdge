@@ -29,6 +29,7 @@ jobs:
           mkdir -p benchmark_output
           for flow in balanced one_sided informed; do
             python simulator.py --sessions 50 --steps 1200 --seed 100 --flow "$flow" > "benchmark_output/$flow.json"
+            python simulator.py --sessions 50 --steps 1200 --seed 100 --flow "$flow" --execution-model stochastic > "benchmark_output/stochastic_$flow.json"
           done
       - name: Optimize on training and validation seeds; evaluate holdout once
         run: |
