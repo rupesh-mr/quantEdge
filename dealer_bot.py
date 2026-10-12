@@ -99,7 +99,7 @@ class QuantEdgeDealer:
         return ("SELL" if position > 0 else "BUY", quantity)
 
     def quote(self, orders, market, portfolio):
-        """Local experiment adapter; not the official competition API."""
+        """Local adapter for the synthetic experiment."""
         result = {}
         prices = market["prices"]
         products = market["products"]
