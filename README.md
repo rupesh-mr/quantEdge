@@ -29,7 +29,7 @@ Across 50 synthetic sessions (seeds 100–149, 1,200 RFQ opportunities each):
 | Managed fixed-spread control | 75.89 | 94% | 552.3 | 5.02 | 36.53 |
 | QuantEdge | 45.36 | 100% | 265.6 | 0.96 | 8.39 |
 
-QuantEdge is more conservative in this sample, but has lower mean PnL and fewer fills than the managed fixed-spread control. This is a risk/activity trade-off, not a claim of strategy superiority. Hedging did not trigger in QuantEdge's benchmark sessions; the hedge logic is covered by unit tests but needs additional scenario testing.
+QuantEdge is more conservative in this sample, but has lower mean PnL and fewer fills than the managed fixed spread control. This is a risk/activity trade-off, not a claim of strategy superiority. Hedging did not trigger in QuantEdge's benchmark sessions; the hedge logic is covered by unit tests but needs additional scenario testing.
 
 ## Limitations
 

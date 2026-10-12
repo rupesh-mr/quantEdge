@@ -1,4 +1,4 @@
-"""Synthetic RFQ simulator for testing market-making strategies."""
+"""Synthetic RFQ simulator for testing market making strategies."""
 import argparse
 import json
 import math

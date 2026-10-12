@@ -18,7 +18,7 @@ class StrategyConfig:
 
 
 class QuantEdgeDealer:
-    """A small, inspectable rule-based strategy; not a production trading system."""
+    """A small, inspectable rule-based strategy"""
 
     def __init__(self, config=None):
         self.config = config or StrategyConfig()

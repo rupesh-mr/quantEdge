@@ -35,13 +35,13 @@ Does adding volatility-aware spreads and inventory-aware pricing change the bala
 - The same seeds improve comparability but do not make the simulator realistic.
 - Parameters were not selected using a separate training/holdout process.
 - The unmanaged strategy intentionally lacks the same risk controls, so it is only a cautionary reference.
-- Outcomes may differ substantially in real markets, where fees, customer behaviour, settlement, and market impact vary.
+- Outcomes may differ substantially in real markets, where fees, customer behaviour, settlement, and market impact vary accordingly.
 
 ## Reproduction
 
 ```bash
 python -m unittest discover -s tests -v
-python simulator.py --sessions 50 --steps 1200 --seed 100
+python simulator.py --sessions 50 --steps 1300 --seed 100
 ```
 
 Compare the output to `benchmark_results.json`. Minor differences may occur if the code or Python random/statistics implementation changes.
