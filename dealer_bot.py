@@ -1,4 +1,4 @@
-"""Inventory-aware quoting and simple hedging rules for the QuantEdge experiment."""
+"""Inventory-aware quoting and simple hedging rules for QuantEdge."""
 from dataclasses import dataclass
 from math import ceil, floor, isfinite
 
@@ -18,7 +18,7 @@ class StrategyConfig:
 
 
 class QuantEdgeDealer:
-    """A small, inspectable rule-based strategy"""
+    """A small, inspectable rule-based strategy."""
 
     def __init__(self, config=None):
         self.config = config or StrategyConfig()
@@ -31,10 +31,10 @@ class QuantEdgeDealer:
         return round(rounded * tick, 10)
 
     def quote_one(self, order, market_price, volatility_bps, tick_size, position):
-        """Return a price or None to decline the RFQ.
+        """Return quote price, or None to decline the RFQ.
 
-        `side` is the customer's side: BUY means we sell; SELL means we buy.
-        `volatility_bps` is the recent mean absolute price change, in basis points.
+        side is the customer's side: BUY means we sell; SELL means we buy.
+        volatility_bps is recent mean absolute price change in basis points.
         """
         c = self.config
         try:
@@ -52,16 +52,17 @@ class QuantEdgeDealer:
                 or not isfinite(tick_size) or tick_size <= 0
                 or not isfinite(volatility_bps)):
             return None
+        if c.inventory_hard_limit < 0 or c.inventory_soft_limit < 0:
+            return None
 
         projected_position = position - qty if side == "BUY" else position + qty
         if abs(projected_position) > c.inventory_hard_limit:
             return None
-        if abs(position) >= c.inventory_hard_limit:
-            if abs(projected_position) >= abs(position):
-                return None
+        if abs(position) >= c.inventory_hard_limit and abs(projected_position) >= abs(position):
+            return None
 
-        vol_component = max(0.0, volatility_bps) * c.volatility_multiplier
-        spread_edge_bps = min(c.max_quote_edge_bps,
+        vol_component = max(0.0, volatility_bps) * max(0.0, c.volatility_multiplier)
+        spread_edge_bps = min(max(0.0, c.max_quote_edge_bps),
                               max(0.0, c.base_edge_bps + vol_component))
 
         inventory_skew = position * c.inventory_skew_bps_per_lot
@@ -84,7 +85,7 @@ class QuantEdgeDealer:
         return max(tick_size, self._round_to_tick(raw_quote, tick_size, side))
 
     def hedge_one(self, product_id, position, lot_size=1):
-        """Return ('SELL' or 'BUY', quantity) to reduce a large position."""
+        """Return (SELL or BUY, quantity) to reduce a large position."""
         c = self.config
         try:
             position, lot_size = int(position), int(lot_size)

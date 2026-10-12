@@ -1,0 +1,37 @@
+name: Python tests and benchmarks
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main, research-v2]
+
+jobs:
+  test-and-benchmark:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Run unit tests
+        run: python -m unittest discover -s tests -v
+      - name: Smoke-test benchmark scenarios
+        run: |
+          python simulator.py --sessions 3 --steps 120 --seed 100 --flow balanced
+          python simulator.py --sessions 3 --steps 120 --seed 100 --flow one_sided
+          python simulator.py --sessions 3 --steps 120 --seed 100 --flow informed
+      - name: Run full seeded benchmark matrix
+        run: |
+          mkdir -p benchmark_output
+          for flow in balanced one_sided informed; do
+            python simulator.py --sessions 50 --steps 1200 --seed 100 --flow "$flow" > "benchmark_output/$flow.json"
+          done
+      - name: Upload benchmark results
+        uses: actions/upload-artifact@v4
+        with:
+          name: research-v2-benchmark-results
+          path: benchmark_output/
+          if-no-files-found: error
