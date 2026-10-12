@@ -106,7 +106,7 @@ These results remain synthetic. The allocation curve, competitor quote process, 
 
 ## Methodology and caveats
 
-The price, RFQ-flow, and competitor-quote random streams are independent, so strategy branches do not alter later random draws. Customer flow is not calibrated from real order flow; prices are exogenous; market impact, queue priority, realistic partial fills, latency, and empirically calibrated post-fill markouts are absent. The confidence intervals describe variation across simulation seeds only, not uncertainty about the model itself.
+The price, RFQ-flow, competitor-quote, and execution random streams are independent, so strategy branches do not alter later random draws. Customer flow is not calibrated from real order flow; prices are exogenous; market impact, queue priority, venue-calibrated fill probabilities, latency, and empirically calibrated post-fill markouts are absent. The optional stochastic model has synthetic partial fills, but they are not calibrated to a real venue. The confidence intervals describe variation across simulation seeds only, not uncertainty about the model itself.
 
 These results are not evidence of live-market profitability. Before making performance claims, add explicit microstructure assumptions, evaluate adverse-selection markouts, and calibrate with sourced market data if available.
 
@@ -118,11 +118,11 @@ python simulator.py --sessions 50 --steps 1200 --seed 100 --flow balanced
 python simulator.py --sessions 50 --steps 1200 --seed 100 --flow one_sided
 python simulator.py --sessions 50 --steps 1200 --seed 100 --flow informed
 python optimize.py --steps 1200 --train-start 100 --train-sessions 20 --validation-start 500 --validation-sessions 20 --holdout-start 1000 --holdout-sessions 50
+python compare_execution.py --directory benchmark_output
 \`\`\`
 
 ## Next experiments
 
-1. Compare the legacy deterministic fill model against the optional stochastic partial-fill model and inspect markout diagnostics.
-2. Calibrate fill and markout assumptions against a defensibly sourced dataset before interpreting the simulator as market evidence.
-3. Add latency and richer queue/competition assumptions only where the execution venue makes those mechanics appropriate.
-4. Only then evaluate a frozen policy on another untouched holdout.
+1. Calibrate fill probabilities, partial-fill behavior, and post-fill markouts against a defensibly sourced market dataset.
+2. Add latency and richer queue/competition assumptions only where the target venue makes those mechanics appropriate.
+3. After freezing the model and policy, evaluate on another untouched holdout and retain the full configuration and seed record.
